@@ -1,0 +1,123 @@
+# Premier League Predictor Configuration
+
+# Current Season
+season: "2025-2026"
+current_gameweek: 17  # Update this after each gameweek
+
+# FBRef URLs
+fbref:
+  base_url: "https://fbref.com"
+  league_url: "https://fbref.com/en/comps/9/Premier-League-Stats"
+  # Specific stat tables
+  tables:
+    standings: "results2024-202591_overall"
+    squad_stats: "stats_squads_standard_for"
+    shooting: "stats_squads_shooting_for"
+    passing: "stats_squads_passing_for"
+    defense: "stats_squads_defense_for"
+    possession: "stats_squads_possession_for"
+    misc: "stats_squads_misc_for"
+
+# Feature Weights (sum to 1.0)
+# These weights determine importance of each category
+feature_weights:
+  offensive:
+    weight: 0.25
+    metrics:
+      goals_scored: 0.20
+      xg: 0.25
+      shots_on_target_pct: 0.15
+      goals_per_shot: 0.15
+      xg_performance: 0.25  # Goals - xG (overperformance)
+
+  defensive:
+    weight: 0.25
+    metrics:
+      goals_conceded: 0.20
+      xga: 0.25
+      clean_sheets: 0.20
+      tackles_won_pct: 0.15
+      blocks: 0.10
+      interceptions: 0.10
+
+  possession:
+    weight: 0.15
+    metrics:
+      possession_pct: 0.30
+      pass_completion: 0.25
+      progressive_passes: 0.25
+      touches_att_third: 0.20
+
+  form:
+    weight: 0.20
+    metrics:
+      points_per_game: 0.30
+      recent_form_5: 0.35  # Last 5 games
+      home_away_balance: 0.15
+      goal_difference_trend: 0.20
+
+  consistency:
+    weight: 0.15
+    metrics:
+      std_goals_scored: 0.25  # Lower is better
+      std_goals_conceded: 0.25
+      win_streak_potential: 0.25
+      loss_recovery: 0.25  # How quick they bounce back
+
+# Model Configuration
+model:
+  type: "ensemble"  # Options: xgboost, lightgbm, random_forest, ensemble
+  ensemble_weights:
+    xgboost: 0.4
+    lightgbm: 0.35
+    random_forest: 0.25
+
+  # Hyperparameters
+  xgboost:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+
+  lightgbm:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    num_leaves: 31
+
+  random_forest:
+    n_estimators: 300
+    max_depth: 10
+    min_samples_split: 5
+
+# Prediction Settings
+prediction:
+  monte_carlo_simulations: 10000
+  confidence_interval: 0.95
+  min_games_for_prediction: 10  # Minimum gameweeks before predictions
+
+# Data Storage
+paths:
+  raw_data: "data/raw"
+  processed_data: "data/processed"
+  predictions: "data/predictions"
+  models: "models"
+  historical_data: "data/historical"
+  player_data: "data/players"
+
+# Enhanced Feature Weights (with new categories)
+enhanced_weights:
+  base_stats: 0.20      # Current season performance
+  form: 0.20            # Recent form and momentum
+  historical: 0.15      # Past seasons performance
+  player: 0.15          # Squad strength and injuries
+  fixture: 0.15         # Remaining fixture difficulty
+  xg_metrics: 0.15      # Expected goals analysis
+
+# Scraping Settings
+scraping:
+  delay_between_requests: 3  # seconds
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  retry_attempts: 3
+  timeout: 30
