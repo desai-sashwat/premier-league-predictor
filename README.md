@@ -69,6 +69,7 @@ The implementation uses a weighted ensemble of regression models to predict fina
 - **.gitignore** - Git ignore file
 - **main.py** - Command-line entry point
 - **predictor.log** - Execution logs
+- **requirements.txt** - Requirements file
 
 ## Data Pipeline
 
