@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Weekly scrape → retrain → commit updated predictions
+# Replaces the local --schedule flag in production
+# Runs every Tuesday at 08:00 UTC (after most GW matches finish Mon night)
+# ---------------------------------------------------------------------------
+
+name: Weekly Model Update
+
+on:
+  schedule:
+    - cron: "0 8 * * 2"   # Tuesdays 08:00 UTC
+  workflow_dispatch:        # allow manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Chrome (for Selenium scraper)
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Determine current gameweek
+        id: gw
+        run: |
+          # Simple heuristic: weeks since Aug 16 (approx season start)
+          # Replace with a more precise method if needed
+          GW=$(python -c "
+          from datetime import date
+          season_start = date(2025, 8, 16)
+          gw = min(38, max(1, (date.today() - season_start).days // 7 + 1))
+          print(gw)
+          ")
+          echo "gameweek=$GW" >> "$GITHUB_OUTPUT"
+
+      - name: Scrape, train, and predict
+        run: |
+          python main.py --scrape --train --predict -g ${{ steps.gw.outputs.gameweek }}
+
+      - name: Commit updated data & models
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ models/
+          git diff --cached --quiet || git commit -m "auto: update predictions GW${{ steps.gw.outputs.gameweek }}"
+          git push
