@@ -80,13 +80,15 @@ class HealthResponse(BaseModel):
 
 class TeamPrediction(BaseModel):
     team: str
-    current_points: Optional[float] = None
     predicted_points: Optional[float] = None
-    win_probability: Optional[float] = None
-    top4_probability: Optional[float] = None
-    points_ci_lower: Optional[float] = None
-    points_ci_upper: Optional[float] = None
-    confidence: Optional[float] = None
+    prob_win_league: Optional[float] = None
+    prob_top_4: Optional[float] = None
+    prob_relegation: Optional[float] = None
+    points_90_ci_low: Optional[float] = None
+    points_90_ci_high: Optional[float] = None
+    points: Optional[float] = None
+    games: Optional[int] = None
+    goal_diff: Optional[float] = None
 
 
 class PredictionResponse(BaseModel):
@@ -206,14 +208,16 @@ def _format_predictions(predictions, gameweek: int) -> PredictionResponse:
         for _, row in predictions.iterrows():
             team_preds.append(
                 TeamPrediction(
-                    team=row.get("team", row.get("Squad", "Unknown")),
-                    current_points=row.get("current_points"),
+                    team=row.get("team", "Unknown"),
                     predicted_points=row.get("predicted_points"),
-                    win_probability=row.get("win_probability"),
-                    top4_probability=row.get("top4_probability"),
-                    points_ci_lower=row.get("points_ci_lower"),
-                    points_ci_upper=row.get("points_ci_upper"),
-                    confidence=row.get("confidence"),
+                    prob_win_league=row.get("prob_win_league"),
+                    prob_top_4=row.get("prob_top_4"),
+                    prob_relegation=row.get("prob_relegation"),
+                    points_90_ci_low=row.get("points_90_ci_low"),
+                    points_90_ci_high=row.get("points_90_ci_high"),
+                    points=row.get("points"),
+                    games=row.get("games"),
+                    goal_diff=row.get("goal_diff"),
                 )
             )
         return PredictionResponse(
