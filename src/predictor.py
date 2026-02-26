@@ -6,15 +6,13 @@ import logging
 import os
 from datetime import datetime
 from typing import Dict
-
 import pandas as pd
 import yaml
-from fixture_difficulty import FixtureDifficultyAnalyzer
-
-from features import FeatureEngineer
-from historical_data import HistoricalDataManager
-from model import PLPredictor
-from scraper import FBRefScraper
+from src.fixture_difficulty import FixtureDifficultyAnalyzer
+from src.features import FeatureEngineer
+from src.historical_data import HistoricalDataManager
+from src.model import PLPredictor
+from src.scraper import FBRefScraper
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
