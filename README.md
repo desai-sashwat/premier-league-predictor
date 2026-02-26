@@ -2,9 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![API](https://img.shields.io/badge/API-Live-green.svg)](https://premier-league-predictor-yh0q.onrender.com/docs)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)](https://www.docker.com/)
 
 ## Table of Contents
 - [Overview](#overview)
+- [Live API](#live-api)
 - [Author](#author)
 - [Machine Learning Approach](#machine-learning-approach)
 - [Key Features](#key-features)
@@ -19,11 +22,57 @@
 - [Results](#results)
 - [Setup and Installation](#setup-and-installation)
 - [Usage](#usage)
+- [Deployment](#deployment)
 - [Future Work](#future-work)
 - [License](#license)
 
 ## Overview
 This project implements a machine learning system to predict the Premier League winner using an ensemble of regression models. The system scrapes real-time data from FBRef, engineers comprehensive features from multiple data sources (current season statistics, historical performance, and fixture difficulty), and uses Monte Carlo simulation to estimate win probabilities. The predictor updates iteratively throughout the season, providing gameweek-by-gameweek projections with confidence intervals.
+
+The project is deployed as a REST API using FastAPI and Docker, with automated weekly model retraining via GitHub Actions.
+
+## Live API
+
+The predictor is deployed and accessible at:
+
+**Base URL**: https://premier-league-predictor-yh0q.onrender.com
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Service health check and model status |
+| `/predict?gameweek=N` | GET | Get predictions for gameweek N (1-38) |
+| `/train?gameweek=N&scrape=true` | POST | Trigger model retraining |
+| `/compare` | GET | Compare predictions across gameweeks |
+| `/docs` | GET | Interactive Swagger API documentation |
+
+**Example Request**:
+```bash
+curl https://premier-league-predictor-yh0q.onrender.com/predict?gameweek=27
+```
+
+**Example Response**:
+```json
+{
+  "gameweek": 27,
+  "generated_at": "2026-02-26T00:23:06.971220",
+  "predictions": [
+    {
+      "team": "Arsenal",
+      "predicted_points": 82.5,
+      "prob_win_league": 5.21,
+      "prob_top_4": 20.02,
+      "prob_relegation": 0.0,
+      "points_90_ci_low": 75.3,
+      "points_90_ci_high": 89.7,
+      "points": 39,
+      "games": 17,
+      "goal_diff": 21
+    }
+  ]
+}
+```
+
+> **Note**: The API is hosted on Render's free tier and may take ~30 seconds to cold start after periods of inactivity.
 
 ## Author
 - Sashwat Desai (desai.sas@northeastern.edu)
@@ -45,10 +94,14 @@ The implementation uses a weighted ensemble of regression models to predict fina
 - Monte Carlo simulation for probabilistic predictions
 - Historical performance analysis (past 5 seasons)
 - Fixture difficulty rating system
-- Automated weekly scheduling for continuous predictions
+- REST API with FastAPI for real-time prediction serving
+- Dockerized deployment for portability
+- Automated weekly retraining via GitHub Actions
 - Prediction tracking and comparison across gameweeks
 
 ## Repository Structure
+- **.github/workflows/** - CI/CD pipelines
+  - **weekly-update.yml** - Automated weekly scrape, retrain, and deploy
 - **config/** - Configuration files
   - **config.yaml** - Model hyperparameters, feature weights, and scraping settings
 - **data/** - Data storage directories
@@ -66,10 +119,11 @@ The implementation uses a weighted ensemble of regression models to predict fina
   - **predictor.py** - Main prediction orchestration
   - **scraper.py** - FBRef web scraper with Selenium
   - **utils.py** - Utility functions
-- **.gitignore** - Git ignore file
+- **app.py** - FastAPI application for REST API serving
+- **Dockerfile** - Multi-stage Docker build for production
+- **docker-compose.yml** - Docker Compose configuration
 - **main.py** - Command-line entry point
-- **predictor.log** - Execution logs
-- **requirements.txt** - Requirements file
+- **requirements.txt** - Python dependencies
 
 ## Data Pipeline
 
@@ -150,20 +204,7 @@ git clone https://github.com/desai-sashwat/premier-league-predictor.git
 cd premier-league-predictor
 
 # Install required packages
-pip install pandas>=1.3.0
-pip install numpy>=1.21.0
-pip install scikit-learn>=1.0.0
-pip install pyyaml>=6.0
-pip install selenium>=4.0.0
-pip install webdriver-manager>=3.8.0
-pip install beautifulsoup4>=4.9.0
-pip install joblib>=1.1.0
-pip install schedule>=1.1.0
-
-# Optional (for better performance)
-pip install xgboost>=1.6.0
-pip install lightgbm>=3.3.0
-pip install lxml>=4.9.0
+pip install -r requirements.txt
 ```
 
 ### Chrome WebDriver
@@ -214,10 +255,47 @@ confidence = predictor.get_prediction_confidence(predictions)
 print(f"Confidence: {confidence}")
 ```
 
+### REST API
+```bash
+# Run locally
+uvicorn app:app --reload --port 8000
+
+# Run with Docker
+docker compose up --build
+
+# API is available at http://localhost:8000
+# Interactive docs at http://localhost:8000/docs
+```
+
 ### Output Files
 - **data/predictions/predictions_gwX_TIMESTAMP.csv**: Full predictions with probabilities
 - **data/processed/features_gwX.csv**: Engineered features for each gameweek
 - **models/MODEL_NAME_gwX.joblib**: Saved model weights
+
+## Deployment
+
+### Docker
+```bash
+# Build and run
+docker compose up --build
+
+# Run in background
+docker compose up -d
+
+# Stop
+docker compose down
+```
+
+### Cloud Deployment (Render)
+The application is deployed on Render with automatic deployments on push to `main`. The Dockerfile is auto-detected and built by Render's pipeline.
+
+### Automated Weekly Updates
+A GitHub Actions workflow (`.github/workflows/weekly-update.yml`) runs every Tuesday at 08:00 UTC to:
+1. Scrape the latest match data from FBRef
+2. Retrain all ensemble models
+3. Generate updated predictions
+4. Commit new model weights and predictions to the repository
+5. Trigger automatic redeployment on Render
 
 ## Future Work
 - **Player-Level Features**: Incorporate individual player statistics and injury data
@@ -226,7 +304,6 @@ print(f"Confidence: {confidence}")
 - **Deep Learning**: Explore LSTM/Transformer models for sequential match prediction
 - **Multi-League Support**: Extend to other major European leagues
 - **Web Dashboard**: Create interactive visualization dashboard for predictions
-- **API Deployment**: Deploy as REST API for real-time prediction queries
 - **Betting Odds Integration**: Compare predictions against bookmaker odds for calibration
 
 ## License
