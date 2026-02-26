@@ -1,15 +1,13 @@
 # ---------------------------------------------------------------------------
 # Premier League Predictor - Production Dockerfile
 # ---------------------------------------------------------------------------
-# Two-stage approach:
-#   1) "builder" installs Python deps (keeps final image lean)
-#   2) "runtime" copies only what's needed to run the API
-# ---------------------------------------------------------------------------
 
 # ---------- Stage 1: builder ----------
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
+
+RUN apt-get update && apt-get install -y gcc g++ && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
@@ -18,6 +16,9 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.11-slim
 
 WORKDIR /app
+
+# Install libgomp (required by LightGBM and XGBoost)
+RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
