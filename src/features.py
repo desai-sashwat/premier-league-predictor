@@ -12,9 +12,9 @@ import pandas as pd
 import yaml
 from sklearn.preprocessing import MinMaxScaler
 
-from fixture_difficulty import FixtureDifficultyAnalyzer
+from src.fixture_difficulty import FixtureDifficultyAnalyzer
 # Import feature modules
-from historical_data import HistoricalDataManager
+from src.historical_data import HistoricalDataManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
